@@ -48,7 +48,7 @@ public:
     }
     void stop() {
         { std::lock_guard<std::mutex> lk(m); stopped = true; }
-        cv.notify_one();                           
+        cv.notify_all();                           
     }
 };
 
