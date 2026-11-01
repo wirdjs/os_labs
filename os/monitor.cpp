@@ -43,12 +43,12 @@ public:
         std::cout << "consumed #" << data->id << ": " << data->text
                   << ", sum = " << data->sum() << std::endl;
         auto res = std::move(data);
-        cv.notify_all();
+        cv.notify_one();
         return res;
     }
     void stop() {
         { std::lock_guard<std::mutex> lk(m); stopped = true; }
-        cv.notify_all();                           
+        cv.notify_one();                           
     }
 };
 
