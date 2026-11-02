@@ -66,7 +66,7 @@ int main() {
     });
     std::thread consumer([&]{
         while (auto msg = mon.consume()) {
-          
+          std::cout << "message #" << msg->id << " processed" << std::endl;
         }
         std::cout << "consumer stopped" << std::endl;
     });
