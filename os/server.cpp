@@ -9,14 +9,13 @@
 #include <cstdlib>
 #include <cstring>
 
-
-// g++ -std=c++17 server.cpp -o server 
-//./server
-volatile sig_atomic_t wasSigHup = 0;
-void sigHupHandler(int) { wasSigHup = 1; }
+volatile sig_atomic_t wasSigHup = 0, wasSigUsr1 = 0, wasSigTerm = 0;
+void sigHupHandler(int)  { wasSigHup = 1; }
+void sigUsr1Handler(int) { wasSigUsr1 = 1; }
+void sigTermHandler(int) { wasSigTerm = 1; }
 
 int main() {
-    const int PORT = 8080;
+    const int PORT = 1573;
 
     // 1. Сокет
     int srv = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,21 +30,34 @@ int main() {
     if (bind(srv, (sockaddr*)&addr, sizeof addr) < 0) { perror("bind"); return 1; }
     if (listen(srv, 5) < 0) { perror("listen"); return 1; }
     printf("Listening on port %d, pid %d\n", PORT, getpid());
+// 2. Обработчики сигналов
+struct sigaction sa;
 
-    // 2. Обработчик сигнала
-    struct sigaction sa;
-    sigaction(SIGHUP, NULL, &sa);
-    sa.sa_handler = sigHupHandler;
-    sa.sa_flags |= SA_RESTART;
-    sigaction(SIGHUP, &sa, NULL);
+sigaction(SIGHUP, NULL, &sa);
+sa.sa_handler = sigHupHandler;
+sa.sa_flags |= SA_RESTART;
+sigaction(SIGHUP, &sa, NULL);
 
-    // 3. Блокировка сигнала
-    sigset_t blockedMask, origMask;
-    sigemptyset(&blockedMask);
-    sigaddset(&blockedMask, SIGHUP);
-    sigprocmask(SIG_BLOCK, &blockedMask, &origMask);
+sigaction(SIGUSR1, NULL, &sa);
+sa.sa_handler = sigUsr1Handler;
+sa.sa_flags |= SA_RESTART;
+sigaction(SIGUSR1, &sa, NULL);
 
-    int client = -1;   // единственное принятое соединение
+sigaction(SIGTERM, NULL, &sa);
+sa.sa_handler = sigTermHandler;
+sa.sa_flags |= SA_RESTART;
+sigaction(SIGTERM, &sa, NULL);
+
+// 3. Блокировка сигналов: сначала собираем набор, потом блокируем
+sigset_t blockedMask, origMask;
+sigemptyset(&blockedMask);
+sigaddset(&blockedMask, SIGHUP);
+sigaddset(&blockedMask, SIGUSR1);
+sigaddset(&blockedMask, SIGTERM);
+sigprocmask(SIG_BLOCK, &blockedMask, &origMask);
+
+   
+    int client = -1;  
 
     // 4. Основной цикл
     for (;;) {
@@ -60,12 +72,11 @@ int main() {
 
         int r = pselect(maxFd + 1, &fds, NULL, NULL, NULL, &origMask);
         if (r < 0) {
-            if (errno == EINTR) {
-                if (wasSigHup) {
-                    wasSigHup = 0;
-                    printf("SIGHUP received\n");
-                }
-                continue;
+                if (errno == EINTR) {
+                    if (wasSigHup)  { wasSigHup = 0;  printf("SIGHUP received\n"); }
+                    if (wasSigUsr1) { wasSigUsr1 = 0; printf("SIGUSR1 received\n"); }
+                    if (wasSigTerm) { printf("SIGTERM, exiting\n"); break; }
+                    continue;
             }
             perror("pselect");
             break;
@@ -89,11 +100,13 @@ int main() {
             }
         }
 
-        if (client >= 0 && FD_ISSET(client, &fds)) {
+  if (client >= 0 && FD_ISSET(client, &fds)) {
             char buf[1024];
             ssize_t n = read(client, buf, sizeof buf);
             if (n > 0) {
-                printf("Received %zd bytes\n", n);
+                printf("Received %zd bytes: ", n);
+                fwrite(buf, 1, n, stdout);
+                fflush(stdout);
             } else {
                 if (n == 0) printf("Client disconnected\n");
                 else perror("read");
