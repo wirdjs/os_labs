@@ -1,0 +1,41 @@
+% Output: result_document
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[english, russian]{babel}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+
+\title{Тестовый документ}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Введение}
+Этот файл подготовлен специально для проверки работы скрипта \texttt{build.sh}. В самой первой строке исходного кода указан комментарий
+
+\section{Проверка формул и таблиц}
+Ниже приведён пример математической формулы (квадратное уравнение и его корни):
+\[
+ax^2 + bx + c = 0, \qquad x_{1,2} = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\]
+
+Также проверим корректность отображения стандартной таблицы:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Расширение файла} & \textbf{Инструмент сборки} \\
+\midrule
+\texttt{.tex} & \texttt{pdflatex} \\
+\texttt{.c} & \texttt{cc -O2 -Wall} \\
+\texttt{.cpp}, \texttt{.cc}, \texttt{.cxx} & \texttt{c++ -O2 -Wall} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
