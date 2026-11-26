@@ -2,7 +2,7 @@
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <unistd.h>
+#include <unistd.h> 
 #include <csignal>
 #include <cerrno>
 #include <cstdio>
@@ -39,7 +39,7 @@ int main() {
         return 1;
     }
     if (listen(srv, 5) < 0) {
-        perror("listen");
+        perror("listen");  
         close(srv);
         return 1;
     }
@@ -56,7 +56,7 @@ int main() {
     sa.sa_handler = sigTermHandler;
     sigaction(SIGTERM, &sa, NULL);
 
-    // 3. Блокировка сигналов вне pselect
+    // 3. Блокировка сигналов вне pselect   
     sigset_t blockedMask, origMask;
     sigemptyset(&blockedMask);
     sigaddset(&blockedMask, SIGHUP);
