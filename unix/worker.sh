@@ -63,7 +63,7 @@ while [ "$running" -eq 1 ]; do
             fi
             i=$((i + 1))
         done
-
+ 
         flock -u 9
     } 9>>"$LOCK_FILE"
 
